@@ -1,22 +1,21 @@
-#include <arpa/inet.h>    // inet_ntoa
+//#include <arpa/inet.h>    // inet_ntoa
 #include <cstring>
 #include <ctype.h>
 #include <fstream>
 #include <iostream>
-#include <netdb.h>        // gethostbyname
-#include <netinet/in.h>   // htonl, htons, inet_ntoa
-#include <netinet/tcp.h>  // SO_REUSEADDR
-#include <pthread.h>
+//#include <netdb.h>        // gethostbyname
+//#include <netinet/in.h>   // htonl, htons, inet_ntoa
+//#include <netinet/tcp.h>  // SO_REUSEADDR
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
-#include <strings.h>      // bzero
-#include <sys/socket.h>   // socket, bind, listen, inet_ntoa
-#include <sys/time.h>
+//#include <strings.h>      // bzero
+//#include <sys/socket.h>   // socket, bind, listen, inet_ntoa
+//#include <sys/time.h>
 #include <sys/types.h>    // socket, bind
-#include <sys/uio.h>      // writev
-#include <unistd.h>       // read, write, close
+//#include <sys/uio.h>      // writev
+//#include <unistd.h>       // read, write, close
 
 using namespace std;
 
@@ -25,6 +24,7 @@ using namespace std;
 //
 // Macro to convieniently add basic error handling
 //
+#define BUF_SIZE 16384
 #define IF_FALSE_RETURN(test, msg) \
   if (!(test)) \
   { \
@@ -46,7 +46,7 @@ int ConvertParameterToInt(char* value)
 
   return (int)result;
 }
-
+/*
 // CreateSocket
 //
 // Creates socket file descriptor and sockaddr_in
@@ -66,7 +66,7 @@ int CreateSocket(char* name, int port, sockaddr_in* sockAddr)
   IF_FALSE_RETURN(sd != -1, "socket failed to create file descriptor");
   return sd;
 }
-
+*/
 int main(int argc, char** argv)
 {
   //take input from command line
@@ -80,19 +80,30 @@ int main(int argc, char** argv)
 
   //parse server address and file requested
 
-  char* temp = argv[1];
-  char* serverIp = strtok(temp,"/");
-  char* file = strtok(NULL,"\0");
-
-  if(host==NULL||h->h_addr == NULL)
+  string host;
+  string address = argv[1];
+  size_t slashpos = address.find("/");
+  if(slashpos != string::npos)
   {
-    printf("400 Bad Request");
-    exit(1);
+    host = address.substr(0, slashpos);
+    address = address.substr(slashpos);
+  } else {
+    host = address;
+    address = "/";
   }
-//
-//
-//
 
+  cout << host << "\r\n";
+  cout << address << "\r\n";
+
+
+// http "://"      ":"    "/"      "/"    "?"       "#"
+
+
+
+//
+//
+//
+/*
   sockaddr_in sendSockAddr;
   int sd = CreateSocket(serverIp, port, &sendSockAddr);
   if (sd == -1)
@@ -103,35 +114,102 @@ int main(int argc, char** argv)
     cout << "Could not connect" << endl;
     exit(1);
   }
-
+*/
 	//issue GET request to server for requested file
 
-  stringstream ssrequest;
+ /* stringstream ssrequest;
   ssrequest << "GET " << file << " HTTP/1.1\r\n"
      << "Host: " << serverIp << "\r\n"
-     << "\r\n\r\n";
-  string request = ssrequest.str();
+     << "\r\n";
+  string request = ssrequest.str();*/
 //
 //
 //
 	//When file is returned by server, output file to screen and file system
-
+/*
   if (send(sock, request.c_str(), request.length(), 0) != (int)request.length()) {
     cout << "Error sending request." << endl;
     exit(1);
   }
+*/
+  stringstream testresponse;
+  testresponse << "HTTP/1.0 200 OK\r\n" <<
+    "Transfer-Encoding: chunked\r\n" <<
+    "Date: Sat, 28 Nov 2009 04:36:25 GMT\r\n" <<
+    "Server: LiteSpeed\r\n" <<
+    "Connection: close\r\n" <<
+    "X-Powered-By: W3 Total Cache/0.8\r\n" <<
+    "Pragma: public\r\n" <<
+    "Expires: Sat, 28 Nov 2009 05:36:25 GMT\r\n" <<
+    "Etag: \"pub1259380237;gz\"\r\n" <<
+    "Cache-Control: max-age=3600, public\r\n" <<
+    "Content-Type: text/html; charset=UTF-8\r\n" <<
+    "Last-Modified: Sat, 28 Nov 2009 03:50:37 GMT\r\n" <<
+    "X-Pingback: http://net.tutsplus.com/xmlrpc.php\r\n" <<
+    "Content-Encoding: gzip\r\n" <<
+    "Vary: Accept-Encoding, Cookie, User-Agent\r\n" <<
+    "\r\n" <<
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" <<
+    "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" <<
+    "<head>\n" <<
+    "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n" <<
+    "<title>Top 20+ MySQL Best Practices - Nettuts+</title>\n" <<
+    "<!-- ... rest of the html ... -->\n";
 
+  char cur[BUF_SIZE+1];
   stringstream ssresponse;
+  stringstream docstream;
+  cur[BUF_SIZE] = '\0';
+  bool readingHeader = true;
+  //size_t readed = read(sock, &cur, BUF_SIZE);
+  string temp = testresponse.str();
+  printf("temp:\n%s\n", temp);
+  size_t readed = temp.length();
+  cout << "readed:\n" << readed << "\n";
+  testresponse.read(cur, BUF_SIZE);
+  printf("cur:\n%s\n", cur);
+  //while (readed > 0)
+  //{
+    if (readingHeader)
+    {
+      if (readed < BUF_SIZE) {
+        printf("readed < BUF_SIZE\n");
+        cur[readed] = '\0';
+      }
+      char* headerEnd = strstr(cur, "\r\n\r\n");
+      printf("headerEnd:\n%s\n", headerEnd);
+      if (headerEnd != NULL)
+      {
+        int headerSize = headerEnd-cur+4;
+        printf("headerSize:\n%i\n", headerSize);
+        ssresponse.write(cur, headerSize);
+        docstream.write(headerEnd+4, readed-headerSize);
+        readingHeader = false;
+        printf("Changed from header to doc.\n");
+      }
+      else
+      {
+        ssresponse.write(cur, readed);
+        printf("Writing to ssresponse.\n");
+      }
+    }
+    else 
+    {
+      docstream.write(cur, readed);
+      printf("Writing to docstream.\n");
+    }
 
-  char cur;
-  while ( read(sock, &cur, 1) > 0 ) {
-    ssresponse << cur;
-  }
+    //readed = read(sock, &cur, BUF_SIZE);
+  //}
 
-  cout << ssresponse;
+  printf("Printing ssresponse:\n");
+  cout << ssresponse.str();
+  printf("Printing docstream:\n");
+  cout << docstream.str();
 //
 //
 //
+
 	//If server returns error code instead of OK code, do not save file; display on the screen whatever error page was sent with error
 //
 //
