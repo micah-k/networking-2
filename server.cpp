@@ -116,7 +116,7 @@ void* openAndSendFile(void* whatever)
     httpcode = 401;
     file.close();
   }
-  else if(strstr((char*)'..')!=NULL)
+  else if(strstr(filerequest, "..")!=NULL)
   {
     httpcode = 403;
     file.close();
