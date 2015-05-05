@@ -7,7 +7,7 @@
 #include <netinet/in.h>   // htonl, htons, inet_ntoa
 #include <netinet/tcp.h>  // SO_REUSEADDR
 #include <sstream>        // sstream
-#include <stdio.h>        //standard I/O
+#include <stdio.h>        // standard I/O
 #include <stdlib.h>       // standard library
 #include <string>         // strings in various places
 #include <strings.h>      // bzero
@@ -95,6 +95,12 @@ int main(int argc, char** argv)
 
   cout << "host:" << host << "\r\n";
   cout << "address:" << address << "\r\n";
+
+  int port = 80;
+  if(host == "127.0.0.1")
+  {
+    port = 9649;
+  }
 //
 //
 //
@@ -102,7 +108,7 @@ int main(int argc, char** argv)
   sockaddr_in sendSockAddr;
   char* hostname = (char*)host.c_str();
   cout << "Creating socket..." << endl;
-  int sd = CreateSocket(hostname, PORT, &sendSockAddr);
+  int sd = CreateSocket(hostname, port, &sendSockAddr);
   if (sd == -1)
     exit(1);
 
@@ -249,80 +255,6 @@ int main(int argc, char** argv)
 //
 //
 //
-/*
-  // Open a new socket and establish a connection to a server.
-  sockaddr_in sendSockAddr;
-  int sd = CreateSocket(serverIp, port, &sendSockAddr);
-  if (sd == -1)
-    return 1;
-
-  IF_FALSE_RETURN(connect(sd, (sockaddr*)&sendSockAddr, sizeof(sendSockAddr)) == 0, "connect failed");
-
-  //Allocate databuf[nbufs][bufsize].
-  char databuf[nbufs][bufsize];
-  FillBuffer((char*)databuf, nbufs * bufsize);
-
-  struct timeval start;
-  struct timeval lap;
-  struct timeval end;
-
-  // Start a timer by calling gettimeofday.
-  gettimeofday(&start, NULL);
-
-  // Repeat the repetition times of data transfers,
-  for (int reps = 0; reps < repetition; reps++)
-  {
-    // each based on type such as 1: multiple writes, 2: writev, or 3: single write
-    switch(type)
-    {
-    case 1: // multiple writes
-      {
-        for (int j = 0; j < nbufs; j++)
-          IF_FALSE_RETURN(write(sd, databuf[j], bufsize) != -1, "write failed");
-      }
-      break;
-    case 2: // writev
-      {
-        struct iovec vector[nbufs];
-        for (int j = 0; j < nbufs; j++)
-        {
-          vector[j].iov_base = databuf[j];
-          vector[j].iov_len = bufsize;
-        }
-        IF_FALSE_RETURN(writev(sd, vector, nbufs) != -1, "writev failed");
-      }
-      break;
-    case 3: // single write
-      IF_FALSE_RETURN(write(sd, databuf, nbufs * bufsize) != -1, "write failed");
-      break;
-    }
-  }
-
-  // Lap the timer by calling gettimeofday, where lap - start = data-sending time.
-  gettimeofday(&lap, NULL);
-
-  // Receive from the server an integer acknowledgement that shows how many times the server called read( ).
-  int count = 0;
-  int reads = 0;
-  while (reads < sizeof(count))
-  {
-    int bytesRead = read(sd, &count, sizeof(count));
-    IF_FALSE_RETURN(bytesRead != -1, "read failed");
-    reads += bytesRead;
-  }
-
-  // Stop the timer by calling gettimeofday, where stop - start = round-trip time.
-  gettimeofday(&end, NULL);
-
-  // Print out the statistics as shown below:
-  printf("Test %d: data-sending time = %ld usec, round-trip time = %ld usec, #reads = %d\n",
-    testno,
-    (lap.tv_sec - start.tv_sec) * 1000000 + (lap.tv_usec - start.tv_usec),
-    (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec),
-    count);
-
-  // Close the socket
-  IF_FALSE_RETURN(close(sd) == 0, "close failed");*/
 
   return 0;
 }
