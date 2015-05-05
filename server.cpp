@@ -136,16 +136,16 @@ void* openAndSendFile(void* whatever)
   switch(httpcode)
   {
   case 401:
-    ssresponse << "Unauthorized\r\n\r\n";
+    ssresponse << " Unauthorized\r\n\r\n";
     break;
   case 403:
-    ssresponse << "Forbidden\r\n\r\n";
+    ssresponse << " Forbidden\r\n\r\n";
     break;
   case 404:
-    ssresponse << "File Not Found\r\n\r\n";
+    ssresponse << " File Not Found\r\n\r\n";
     break;
   default:
-    ssresponse << "OK\r\n\r\n";
+    ssresponse << " OK\r\n\r\n";
     break;
   }
 
