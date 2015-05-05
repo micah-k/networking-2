@@ -105,28 +105,73 @@ void* openAndSendFile(void* whatever)
   cout << ssrequest.str();
 
   // open file requested...
-
-/*
-  // and send with HTTP 200 OK code.
-  int written = 0;
-  while (written < sizeof(count))
+  int httpcode;
+  ifstream file();
+  string filerequest = ssrequest.str();
+  filerequest = filerequest.erase(0, 4);
+  filerequest = filerequest.substr(0, filerequest.find(" "));
+  ifstream file(filerequest);
+  if(filerequest == "SecretFile.html")
   {
-    int bytesWritten = write(sd, &count, sizeof(count));
-    if (bytesWritten == -1)
-    {
-      printf("write failed\n");
-      exit(1);
-    }
-
-    written += bytesWritten;
+    httpcode = 401;
+    file.close();
+  }
+  else if(strstr("..")!=NULL)
+  {
+    httpcode = 403;
+    file.close();
+  }
+  else if(!file.good())
+  {
+    httpcode = 404;
+    file.close();
+  }
+  else
+  {
+    httpcode = 200;
   }
 
+  stringstream ssresponse;
+  ssresponse << "HTTP/1.0 " << httpcode;
+  switch(httpcode)
+  {
+  case 401:
+    ssresponse << "Unauthorized\r\n\r\n";
+    break;
+  case 403:
+    ssresponse << "Forbidden\r\n\r\n";
+    break;
+  case 404:
+    ssresponse << "File Not Found\r\n\r\n";
+    break;
+  default:
+    ssresponse << "OK\r\n\r\n";
+    break;
+  }
+
+  if(httpcode==200)
+  {
+    ssresponse << file;
+  }
+  else
+  {
+    ssresponse << "<p>" << httpcode << "</p>";
+  }
+
+  string response = ssresponse.str();
+
+  // and send with HTTP 200 OK code.
+  cout << "Sending response..." << endl;
+  if (send(sd, response.c_str(), response.length(), 0) != (int)response.length()) {
+    cout << "Error sending response." << endl;
+    exit(1);
+  }
 
   if (close(sd) != 0)
   {
       printf("close failed\n");
       exit(1);
-  }*/
+  }
 }
 
 int main(int argc, char** argv)
