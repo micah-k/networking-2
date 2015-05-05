@@ -91,7 +91,14 @@ void* openAndSendFile(void* whatever)
   {
     printf("Reading data...\n");
     ssrequest.write(databuf, readed);
-    readed = read(sd, &databuf, BUF_SIZE); 
+    if(readed >= BUF_SIZE)
+    {
+      readed = read(sd, &databuf, BUF_SIZE);
+    }
+    else
+    {
+      readed = 0;
+    }
   }
 
   printf("Printing ssrequest:\n");
