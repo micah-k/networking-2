@@ -130,7 +130,18 @@ void* openAndSendFile(void* whatever)
 
   if(httpcode == 200)
   {
-    ssresponse << file.rdbuf();
+    char cur[BUF_SIZE];
+
+    file.seekg(0, file.beg);
+    while(file.good())
+    {
+      int readed = file.read(cur, BUF_SIZE);
+      if (readed > 0)
+      {
+        ssresponse.write(cur, readed);
+      }
+    }
+
     file.close();
   }
   else
