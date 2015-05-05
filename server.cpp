@@ -25,6 +25,7 @@ struct threadData
 };
 
 #define BUF_SIZE 16384
+#define PORT 9649
 //
 // IF_FALSE_RETURN
 //
@@ -123,8 +124,7 @@ void* openAndSendFile(void* whatever)
 int main(int argc, char** argv)
 {
   //wait for connection and HTTP GET request (you may do this single threaded or multi-threaded)
-  IF_FALSE_RETURN(argc==2,"Improper server call.");
-  int port = ConvertParameterToInt(argv[1]);
+  
 
 
 
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
   bzero((char*)&acceptSockAddr, sizeof(acceptSockAddr));
   acceptSockAddr.sin_family      = AF_INET;
   acceptSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  acceptSockAddr.sin_port        = htons(port);
+  acceptSockAddr.sin_port        = htons(PORT);
 
   // Open a stream-oriented socket with the Internet address family.
   int serverSd = socket(AF_INET, SOCK_STREAM, 0);
@@ -152,7 +152,7 @@ int main(int argc, char** argv)
   // Instruct the operating system to listen to up to 8 connection requests from clients at a time
   IF_FALSE_RETURN(listen(serverSd, 8) != -1, "listen failed");
 
-  printf("Server: listening on port %d\n", port);
+  printf("Server: listening on port %d\n", PORT);
 
   // Receive a request from a client by calling accept that will return a new socket specific to this connection request.
   sockaddr_in newSockAddr;
