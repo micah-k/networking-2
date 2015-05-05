@@ -1,21 +1,21 @@
-//#include <arpa/inet.h>    // inet_ntoa
+#include <arpa/inet.h>    // inet_ntoa
 #include <cstring>
 #include <ctype.h>
 #include <fstream>
 #include <iostream>
-//#include <netdb.h>        // gethostbyname
-//#include <netinet/in.h>   // htonl, htons, inet_ntoa
-//#include <netinet/tcp.h>  // SO_REUSEADDR
+#include <netdb.h>        // gethostbyname
+#include <netinet/in.h>   // htonl, htons, inet_ntoa
+#include <netinet/tcp.h>  // SO_REUSEADDR
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
-//#include <strings.h>      // bzero
-//#include <sys/socket.h>   // socket, bind, listen, inet_ntoa
-//#include <sys/time.h>
+#include <strings.h>      // bzero
+#include <sys/socket.h>   // socket, bind, listen, inet_ntoa
+#include <sys/time.h>
 #include <sys/types.h>    // socket, bind
-//#include <sys/uio.h>      // writev
-//#include <unistd.h>       // read, write, close
+#include <sys/uio.h>      // writev
+#include <unistd.h>       // read, write, close
 
 using namespace std;
 
@@ -25,6 +25,7 @@ using namespace std;
 // Macro to convieniently add basic error handling
 //
 #define BUF_SIZE 16384
+#define PORT 80
 #define IF_FALSE_RETURN(test, msg) \
   if (!(test)) \
   { \
@@ -46,7 +47,7 @@ int ConvertParameterToInt(char* value)
 
   return (int)result;
 }
-/*
+
 // CreateSocket
 //
 // Creates socket file descriptor and sockaddr_in
@@ -66,7 +67,7 @@ int CreateSocket(char* name, int port, sockaddr_in* sockAddr)
   IF_FALSE_RETURN(sd != -1, "socket failed to create file descriptor");
   return sd;
 }
-*/
+
 int main(int argc, char** argv)
 {
   //take input from command line
@@ -92,47 +93,44 @@ int main(int argc, char** argv)
     address = "/";
   }
 
-  cout << host << "\r\n";
-  cout << address << "\r\n";
-
-
-// http "://"      ":"    "/"      "/"    "?"       "#"
-
-
-
+  cout << "host:" << host << "\r\n";
+  cout << "address:" << address << "\r\n";
 //
 //
 //
-/*
+
   sockaddr_in sendSockAddr;
-  int sd = CreateSocket(serverIp, port, &sendSockAddr);
+  char* hostname = (char*)host.c_str();
+  cout << "Creating socket..." << endl;
+  int sd = CreateSocket(hostname, PORT, &sendSockAddr);
   if (sd == -1)
     exit(1);
 
-  if ( connect(sock, (struct sockaddr *)&client, sizeof(client)) < 0 ) {
-    close(sock);
+  cout << "Connecting..." << endl;
+  if ( connect(sd, (struct sockaddr *)&sendSockAddr, sizeof(sendSockAddr)) < 0 ) {
+    close(sd);
     cout << "Could not connect" << endl;
     exit(1);
   }
-*/
+
 	//issue GET request to server for requested file
 
- /* stringstream ssrequest;
-  ssrequest << "GET " << file << " HTTP/1.1\r\n"
-     << "Host: " << serverIp << "\r\n"
+  stringstream ssrequest;
+  ssrequest << "GET " << address << " HTTP/1.0\r\n"
+     << "Host: " << host << "\r\n"
      << "\r\n";
-  string request = ssrequest.str();*/
+  string request = ssrequest.str();
 //
 //
 //
 	//When file is returned by server, output file to screen and file system
-/*
-  if (send(sock, request.c_str(), request.length(), 0) != (int)request.length()) {
+  cout << "Sending request..." << endl;
+  if (send(sd, request.c_str(), request.length(), 0) != (int)request.length()) {
     cout << "Error sending request." << endl;
     exit(1);
   }
-*/
-  stringstream testresponse;
+
+  /*stringstream testresponse;
   testresponse << "HTTP/1.0 200 OK\r\n" <<
     "Transfer-Encoding: chunked\r\n" <<
     "Date: Sat, 28 Nov 2009 04:36:25 GMT\r\n" <<
@@ -154,22 +152,33 @@ int main(int argc, char** argv)
     "<head>\n" <<
     "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n" <<
     "<title>Top 20+ MySQL Best Practices - Nettuts+</title>\n" <<
-    "<!-- ... rest of the html ... -->\n";
+    "<!-- ... rest of the html ... -->\n";*/
+/*
+  char cur[BUF_SIZE];
+  string ssresponse;
+  cout << "Receiving response..." << endl;
+  while(recv(sd,cur,BUF_SIZE,0)>0)
+  {
+    ssresponse.append(cur);
+    printf("%s\n",cur);
+    bzero(&cur,sizeof(cur));
+  }
+*/
+
 
   char cur[BUF_SIZE+1];
   stringstream ssresponse;
   stringstream docstream;
   cur[BUF_SIZE] = '\0';
   bool readingHeader = true;
-  //size_t readed = read(sock, &cur, BUF_SIZE);
-  string temp = testresponse.str();
-  printf("temp:\n%s\n", temp);
+  size_t readed = read(sd, &cur, BUF_SIZE);
+/*  string temp = testresponse.str();
   size_t readed = temp.length();
   cout << "readed:\n" << readed << "\n";
   testresponse.read(cur, BUF_SIZE);
-  printf("cur:\n%s\n", cur);
-  //while (readed > 0)
-  //{
+  printf("cur:\n%s\n", cur);*/
+  while (readed > 0)
+  {
     if (readingHeader)
     {
       if (readed < BUF_SIZE) {
@@ -198,19 +207,41 @@ int main(int argc, char** argv)
       docstream.write(cur, readed);
       printf("Writing to docstream.\n");
     }
-
-    //readed = read(sock, &cur, BUF_SIZE);
-  //}
+    printf("Reading next segment.\n");
+    readed = read(sd, &cur, BUF_SIZE); 
+  }
 
   printf("Printing ssresponse:\n");
   cout << ssresponse.str();
-  printf("Printing docstream:\n");
+  printf("Outputting file:\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   cout << docstream.str();
+  printf("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+  
 //
 //
 //
 
 	//If server returns error code instead of OK code, do not save file; display on the screen whatever error page was sent with error
+  int httpCode = atoi(ssresponse.str().substr(9,3).c_str());
+  cout << "HTTP code " << httpCode << endl << endl;
+  if(httpCode == 200)
+  {
+    int lastdot = address.find_last_of(".");
+    string filetype;
+    if(lastdot > address.length())
+    {
+      filetype = ".html";
+    }
+    else
+    {
+      filetype = address.substr(lastdot);
+    }
+    
+    
+    ofstream savefile(("file" + filetype).c_str());
+    savefile << docstream;
+    savefile.close();
+  }
 //
 //
 //
