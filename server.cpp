@@ -77,7 +77,7 @@ void* openAndSendFile(void* whatever)
   filerequest = filerequest.substr(0, filerequest.find(" "));
   if (filerequest == "/")
   {
-    filerequest == "mainfile.html";
+    filerequest = "mainfile.html";
   }
   else
   {
@@ -133,9 +133,17 @@ void* openAndSendFile(void* whatever)
 
   if(httpcode == 200)
   {
-    copy(istreambuf_iterator<char>(file),
-      istreambuf_iterator<char>(),
-      ostreambuf_iterator<char>(ssresponse));
+    char cur[BUF_SIZE];
+
+    file.seekg(0, file.beg);
+    while(file.good())
+    {
+      file.read(cur, BUF_SIZE);
+      if (file.gcount() > 0)
+      {
+        ssresponse.write(cur, file.gcount());
+      }
+    }
 
     file.close();
   }
