@@ -112,10 +112,10 @@ void* openAndSendFile(void* whatever)
   filerequest = filerequest.substr(0, filerequest.find(" "));
   if (filerequest == "/")
   {
-    filerequest == "mainfile.html";
+    filerequest == "/mainfile.html";
   }
   ifstream file(filerequest.c_str());
-  if(filerequest == "SecretFile.html")
+  if(filerequest == "/SecretFile.html")
   {
     httpcode = 401;
     file.close();
@@ -153,7 +153,7 @@ void* openAndSendFile(void* whatever)
     break;
   }
 
-  if(httpcode==200)
+  if(httpcode == 200)
   {
     ssresponse << file;
   }
