@@ -89,6 +89,7 @@ void* openAndSendFile(void* whatever)
 
   while(readed > 0)
   {
+    printf("Reading data...\n");
     ssrequest.write(databuf, readed);
     readed = read(sd, &databuf, BUF_SIZE); 
   }
