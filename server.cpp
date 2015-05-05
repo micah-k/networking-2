@@ -1,18 +1,21 @@
-#include <stdlib.h>
+#include <arpa/inet.h>    // inet_ntoa
+#include <fstream>
+#include <iostream>
+#include <netdb.h>        // gethostbyname
+#include <netinet/in.h>   // htonl, htons, inet_ntoa
+#include <netinet/tcp.h>  // SO_REUSEADDR
+#include <pthread.h>
+#include <sstream>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string>
+#include <strings.h>      // bzero
 #include <sys/types.h>    // socket, bind
 #include <sys/socket.h>   // socket, bind, listen, inet_ntoa
-#include <netinet/in.h>   // htonl, htons, inet_ntoa
-#include <arpa/inet.h>    // inet_ntoa
-#include <netdb.h>        // gethostbyname
-#include <unistd.h>       // read, write, close
-#include <strings.h>      // bzero
-#include <netinet/tcp.h>  // SO_REUSEADDR
 #include <sys/uio.h>      // writev
 #include <sys/time.h>
-#include <pthread.h>
+#include <unistd.h>       // read, write, close
 
-#define BUF_SIZE 16384
 
 using namespace std;
 
@@ -21,6 +24,8 @@ struct threadData
   int sd;
 };
 
+#define BUF_SIZE 16384
+#define PORT 80
 //
 // IF_FALSE_RETURN
 //
