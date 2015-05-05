@@ -110,6 +110,10 @@ void* openAndSendFile(void* whatever)
   string filerequest = ssrequest.str();
   filerequest = filerequest.erase(0, 4);
   filerequest = filerequest.substr(0, filerequest.find(" "));
+  if (filerequest == "/")
+  {
+    filerequest == "mainfile.html";
+  }
   ifstream file(filerequest.c_str());
   if(filerequest == "SecretFile.html")
   {
