@@ -17,7 +17,6 @@
 #include <sys/time.h>
 #include <unistd.h>       // read, write, close
 
-
 using namespace std;
 
 struct threadData
@@ -74,14 +73,18 @@ void* openAndSendFile(void* whatever)
   // open file requested...
   int httpcode;
   string filerequest = ssrequest.str();
-  filerequest = filerequest.erase(0, 5);
+  filerequest = filerequest.erase(0, 4);
   filerequest = filerequest.substr(0, filerequest.find(" "));
-  if (filerequest == "")
+  if (filerequest == "/")
   {
     filerequest == "mainfile.html";
   }
+  else
+  {
+    filerequest = filerequest.erase(0,1);
+  }
 
-  ifstream file(filerequest.c_str());
+  ifstream file(filerequest.c_str(), ifstream::in);
 
   // as noted in class, for your demo script, you can create a list of "unauthorized files"
   // and "forbidden files" and check that list rather than actually trying to determine if 
@@ -130,7 +133,10 @@ void* openAndSendFile(void* whatever)
 
   if(httpcode == 200)
   {
-    ssresponse << file.rdbuf();
+    copy(istreambuf_iterator<char>(file),
+      istreambuf_iterator<char>(),
+      ostreambuf_iterator<char>(ssresponse));
+
     file.close();
   }
   else

@@ -16,7 +16,6 @@
 #include <sys/types.h>    // socket, bind
 #include <sys/uio.h>      // writev
 #include <unistd.h>       // read, write, close
-#include <functional>     // AtExit
 
 using namespace std;
 
@@ -24,44 +23,28 @@ using namespace std;
 #define PORT 80
 
 //
-// IF_FALSE_RETURN_VAL
+// Macros to convieniently add basic error handling
 //
-// Macro to convieniently add basic error handling
-//
-#define IF_FALSE_RETURN_VAL(test, val, msg) \
+#define IF_FALSE_RETURN_VAL(test, val) \
   if (!(test)) \
   { \
-    if (msg != NULL) \
-    { \
-      printf("%s\n", msg); \
-    } \
     return val; \
   }
 
-class AtExit
-{
-   bool _dismissed;
-   std::function<void (void)> _func;
-public:
-  AtExit(std::function<void (void)> func)
-    : _func(func)
-    , _dismissed(false)
-  {
+#define IF_FALSE_FAIL_VAL(test, val, msg) \
+  if (!(test)) \
+  { \
+    printf("%s\n", msg); \
+    return val; \
   }
 
-  ~AtExit()
-  {
-    if (!_dismissed)
-    {
-      _func();
-    }
+#define IF_FALSE_CLOSE_AND_FAIL_VAL(test, sd, val, msg) \
+  if (!(test)) \
+  { \
+    printf("%s\n", msg); \
+    close(sd); \
+    return val; \
   }
-
-  void Dimiss() throw()
-  {
-    _dismissed = true;
-  }
-};
 
 // CreateSocket
 //
@@ -70,7 +53,7 @@ public:
 int CreateSocket(char* name, int port, sockaddr_in* sockAddr)
 {
   struct hostent* host = gethostbyname( name );
-  IF_FALSE_RETURN_VAL(host != NULL, -1, "400 Bad Request");
+  IF_FALSE_FAIL_VAL(host != NULL, -1, "400 Bad Request");
 
   bzero( (char*)sockAddr, sizeof( sockAddr ) );
 
@@ -79,7 +62,7 @@ int CreateSocket(char* name, int port, sockaddr_in* sockAddr)
   sockAddr->sin_port = htons( port );
 
   int sd = socket( AF_INET, SOCK_STREAM, 0 );
-  IF_FALSE_RETURN_VAL(sd != -1, -1, "socket failed to create file descriptor");
+  IF_FALSE_FAIL_VAL(sd != -1, -1, "socket failed to create file descriptor");
   return sd;
 }
 
@@ -88,7 +71,7 @@ int main(int argc, char** argv)
   //take input from command line
 
   //Make sure we got the right number of parameters or display usage
-  IF_FALSE_RETURN_VAL(argc == 2, 1, "400 Bad Request");
+  IF_FALSE_FAIL_VAL(argc == 2, 1, "400 Bad Request");
 
   //parse server address and file requested
 
@@ -117,15 +100,11 @@ int main(int argc, char** argv)
   char* hostname = (char*)host.c_str();
   cout << "Creating socket..." << endl;
   int sd = CreateSocket(hostname, port, &sendSockAddr);
-  IF_FALSE_RETURN_VAL(sd != -1, 1, NULL);
-
-  AtExit socketGuard([sd](){
-    close(sd);
-  });
+  IF_FALSE_RETURN_VAL(sd != -1, 1);
 
   cout << "Connecting..." << endl;
   int result = connect(sd, (struct sockaddr *)&sendSockAddr, sizeof(sendSockAddr));
-  IF_FALSE_RETURN_VAL(result >= 0, 1, "Could not connect");
+  IF_FALSE_CLOSE_AND_FAIL_VAL(result >= 0, sd, 1, "Could not connect");
 
 	//issue GET request to server for requested file
 
@@ -137,7 +116,7 @@ int main(int argc, char** argv)
 
   cout << "Sending request..." << endl;
   result = send(sd, request.c_str(), request.length(), 0);
-  IF_FALSE_RETURN_VAL(result == (int)request.length(), 1, "Error sending request.");
+  IF_FALSE_CLOSE_AND_FAIL_VAL(result == (int)request.length(), sd, 1, "Error sending request.");
 
   //read and parse server response
   char cur[BUF_SIZE+1];
@@ -182,6 +161,8 @@ int main(int argc, char** argv)
     readed = read(sd, &cur, BUF_SIZE); 
   }
 
+  close(sd);
+
   //When file is returned by server, output file to screen and file system
 
   printf("Printing ssresponse:\n");
@@ -216,3 +197,4 @@ int main(int argc, char** argv)
 
   return 0;
 }
+
