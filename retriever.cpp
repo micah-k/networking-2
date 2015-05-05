@@ -1,15 +1,15 @@
 #include <arpa/inet.h>    // inet_ntoa
-#include <cstring>
-#include <ctype.h>
-#include <fstream>
-#include <iostream>
+#include <cstring>        // strstr
+#include <ctype.h>        // Not sure how this got here
+#include <fstream>        // ofstream
+#include <iostream>       // various streams
 #include <netdb.h>        // gethostbyname
 #include <netinet/in.h>   // htonl, htons, inet_ntoa
 #include <netinet/tcp.h>  // SO_REUSEADDR
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
+#include <sstream>        // sstream
+#include <stdio.h>        //standard I/O
+#include <stdlib.h>       // standard library
+#include <string>         // strings in various places
 #include <strings.h>      // bzero
 #include <sys/socket.h>   // socket, bind, listen, inet_ntoa
 #include <sys/time.h>

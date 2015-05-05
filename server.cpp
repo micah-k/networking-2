@@ -12,7 +12,7 @@
 #include <sys/time.h>
 #include <pthread.h>
 
-#define BUFSIZE 1500
+#define BUF_SIZE 16384
 
 using namespace std;
 
@@ -50,42 +50,51 @@ int ConvertParameterToInt(char* value)
 
 void* openAndSendFile(void* whatever)
 {
-  //After receiving GET request, open file requested and send with HTTP 200 OK code
+  
 
   //  If file requested does not exist, return 404 Not Found code with custom File Not Found page
+  //
+  //
+  //
   //  If HTTP request is for SecretFile.html, return 401 Unauthorized
+  //
+  //
+  //
   //  If request is for file that is above the directory structure where web server is running ( for example, "GET ../../../etc/passwd" ), return 403 Forbidden
+  //
+  //
+  //
   //  if server cannot understand request return 400 Bad Request
+  //
+  //
+  //
 
 
   threadData* data = (threadData*)whatever;
-  
   int sd = data->sd;
-
   delete data;
+  // After receiving GET request...
+  char databuf[BUF_SIZE];
+  stringstream ssrequest;
 
-  char databuf[BUFSIZE];
-
-  int count = 0;
-  // Repeat reading data from the client into databuf[BUFSIZE]. 
+  // Repeat reading data from the client into databuf[BUF_SIZE]. 
   // Note that the read system call may return without reading 
   // the entire data if the network is slow.
-  int remaining = BUFSIZE;
+  int readed = read(sd, &databuf, BUF_SIZE);
 
-  while(remaining > 0)
+  while(readed > 0)
   {
-    int bytesRead = read(sd, databuf, remaining);
-    if (bytesRead == -1)
-    {
-      printf("read failed\n");
-      exit(1);
-    }
-
-    count += 1;
-    remaining -= bytesRead;
+    ssrequest.write(databuf, readed);
+    readed = read(sd, &databuf, BUF_SIZE); 
   }
 
-  // Send the number of read calls made, as an acknowledgement.
+  printf("Printing ssrequest:\n");
+  cout << ssrequest.str();
+
+  // open file requested...
+
+/*
+  // and send with HTTP 200 OK code.
   int written = 0;
   while (written < sizeof(count))
   {
@@ -104,7 +113,7 @@ void* openAndSendFile(void* whatever)
   {
       printf("close failed\n");
       exit(1);
-  }
+  }*/
 }
 
 int main(int argc, char** argv)
