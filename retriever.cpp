@@ -239,7 +239,7 @@ int main(int argc, char** argv)
     
     
     ofstream savefile(("file" + filetype).c_str());
-    savefile << docstream;
+    savefile << docstream.str();
     savefile.close();
   }
 //
