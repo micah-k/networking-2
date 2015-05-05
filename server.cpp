@@ -1,4 +1,5 @@
 #include <arpa/inet.h>    // inet_ntoa
+#include <cstring>        // strstr
 #include <fstream>
 #include <iostream>
 #include <netdb.h>        // gethostbyname
@@ -109,7 +110,7 @@ void* openAndSendFile(void* whatever)
   string filerequest = ssrequest.str();
   filerequest = filerequest.erase(0, 4);
   filerequest = filerequest.substr(0, filerequest.find(" "));
-  ifstream file(filerequest);
+  ifstream file(filerequest.c_str());
   if(filerequest == "SecretFile.html")
   {
     httpcode = 401;
