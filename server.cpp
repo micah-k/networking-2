@@ -152,7 +152,7 @@ int main(int argc, char** argv)
   // Instruct the operating system to listen to up to 8 connection requests from clients at a time
   IF_FALSE_RETURN(listen(serverSd, 8) != -1, "listen failed");
 
-  printf("Server: listening on port %d\n", port);
+  printf("Server: listening on port %d\n", PORT);
 
   // Receive a request from a client by calling accept that will return a new socket specific to this connection request.
   sockaddr_in newSockAddr;
