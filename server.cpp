@@ -106,7 +106,6 @@ void* openAndSendFile(void* whatever)
 
   // open file requested...
   int httpcode;
-  ifstream file();
   string filerequest = ssrequest.str();
   filerequest = filerequest.erase(0, 4);
   filerequest = filerequest.substr(0, filerequest.find(" "));
