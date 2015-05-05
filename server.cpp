@@ -133,7 +133,7 @@ int main(int argc, char** argv)
   bzero((char*)&acceptSockAddr, sizeof(acceptSockAddr));
   acceptSockAddr.sin_family      = AF_INET;
   acceptSockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  acceptSockAddr.sin_port        = htons(port);
+  acceptSockAddr.sin_port        = htons(PORT);
 
   // Open a stream-oriented socket with the Internet address family.
   int serverSd = socket(AF_INET, SOCK_STREAM, 0);
