@@ -74,7 +74,7 @@ void* openAndSendFile(void* whatever)
   //
   //
 
-
+  printf("Begin thread:\n");
   threadData* data = (threadData*)whatever;
   int sd = data->sd;
   delete data;
