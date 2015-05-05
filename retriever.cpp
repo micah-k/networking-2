@@ -16,37 +16,52 @@
 #include <sys/types.h>    // socket, bind
 #include <sys/uio.h>      // writev
 #include <unistd.h>       // read, write, close
+#include <functional>     // AtExit
 
 using namespace std;
 
+#define BUF_SIZE 16384
+#define PORT 80
+
 //
-// IF_FALSE_RETURN
+// IF_FALSE_RETURN_VAL
 //
 // Macro to convieniently add basic error handling
 //
-#define BUF_SIZE 16384
-#define PORT 80
-#define IF_FALSE_RETURN(test, msg) \
+#define IF_FALSE_RETURN_VAL(test, val, msg) \
   if (!(test)) \
   { \
-    printf("%s\n", msg); \
-    return -1; \
+    if (msg != NULL) \
+    { \
+      printf("%s\n", msg); \
+    } \
+    return val; \
   }
 
-// ConvertParameterToInt
-//
-// several of our parameters are expected to be well formed numbers
-// since no negative values are expected, return -1 to indicate an error.
-//
-int ConvertParameterToInt(char* value)
+class AtExit
 {
-  char* endptr = NULL;
-  long int result = strtol(value, &endptr, 0);
-  if (*value == '\0' || *endptr != '\0')
-    return -1;
+   bool _dismissed;
+   std::function<void (void)> _func;
+public:
+  AtExit(std::function<void (void)> func)
+    : _func(func)
+    , _dismissed(false)
+  {
+  }
 
-  return (int)result;
-}
+  ~AtExit()
+  {
+    if (!_dismissed)
+    {
+      _func();
+    }
+  }
+
+  void Dimiss() throw()
+  {
+    _dismissed = true;
+  }
+};
 
 // CreateSocket
 //
@@ -55,7 +70,7 @@ int ConvertParameterToInt(char* value)
 int CreateSocket(char* name, int port, sockaddr_in* sockAddr)
 {
   struct hostent* host = gethostbyname( name );
-  IF_FALSE_RETURN(host != NULL, "400 Bad Request");
+  IF_FALSE_RETURN_VAL(host != NULL, -1, "400 Bad Request");
 
   bzero( (char*)sockAddr, sizeof( sockAddr ) );
 
@@ -64,7 +79,7 @@ int CreateSocket(char* name, int port, sockaddr_in* sockAddr)
   sockAddr->sin_port = htons( port );
 
   int sd = socket( AF_INET, SOCK_STREAM, 0 );
-  IF_FALSE_RETURN(sd != -1, "socket failed to create file descriptor");
+  IF_FALSE_RETURN_VAL(sd != -1, -1, "socket failed to create file descriptor");
   return sd;
 }
 
@@ -73,11 +88,7 @@ int main(int argc, char** argv)
   //take input from command line
 
   //Make sure we got the right number of parameters or display usage
-  if (argc != 2)
-  {
-    printf("400 Bad Request");
-    exit(1);
-  }
+  IF_FALSE_RETURN_VAL(argc == 2, 1, "400 Bad Request");
 
   //parse server address and file requested
 
@@ -101,23 +112,20 @@ int main(int argc, char** argv)
   {
     port = 9649;
   }
-//
-//
-//
 
   sockaddr_in sendSockAddr;
   char* hostname = (char*)host.c_str();
   cout << "Creating socket..." << endl;
   int sd = CreateSocket(hostname, port, &sendSockAddr);
-  if (sd == -1)
-    exit(1);
+  IF_FALSE_RETURN_VAL(sd != -1, 1, NULL);
+
+  AtExit socketGuard([sd](){
+    close(sd);
+  });
 
   cout << "Connecting..." << endl;
-  if ( connect(sd, (struct sockaddr *)&sendSockAddr, sizeof(sendSockAddr)) < 0 ) {
-    close(sd);
-    cout << "Could not connect" << endl;
-    exit(1);
-  }
+  int result = connect(sd, (struct sockaddr *)&sendSockAddr, sizeof(sendSockAddr));
+  IF_FALSE_RETURN_VAL(result >= 0, 1, "Could not connect");
 
 	//issue GET request to server for requested file
 
@@ -126,71 +134,25 @@ int main(int argc, char** argv)
      << "Host: " << host << "\r\n"
      << "\r\n";
   string request = ssrequest.str();
-//
-//
-//
-	//When file is returned by server, output file to screen and file system
+
   cout << "Sending request..." << endl;
-  if (send(sd, request.c_str(), request.length(), 0) != (int)request.length()) {
-    cout << "Error sending request." << endl;
-    exit(1);
-  }
+  result = send(sd, request.c_str(), request.length(), 0);
+  IF_FALSE_RETURN_VAL(result == (int)request.length(), 1, "Error sending request.");
 
-  /*stringstream testresponse;
-  testresponse << "HTTP/1.0 200 OK\r\n" <<
-    "Transfer-Encoding: chunked\r\n" <<
-    "Date: Sat, 28 Nov 2009 04:36:25 GMT\r\n" <<
-    "Server: LiteSpeed\r\n" <<
-    "Connection: close\r\n" <<
-    "X-Powered-By: W3 Total Cache/0.8\r\n" <<
-    "Pragma: public\r\n" <<
-    "Expires: Sat, 28 Nov 2009 05:36:25 GMT\r\n" <<
-    "Etag: \"pub1259380237;gz\"\r\n" <<
-    "Cache-Control: max-age=3600, public\r\n" <<
-    "Content-Type: text/html; charset=UTF-8\r\n" <<
-    "Last-Modified: Sat, 28 Nov 2009 03:50:37 GMT\r\n" <<
-    "X-Pingback: http://net.tutsplus.com/xmlrpc.php\r\n" <<
-    "Content-Encoding: gzip\r\n" <<
-    "Vary: Accept-Encoding, Cookie, User-Agent\r\n" <<
-    "\r\n" <<
-    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" <<
-    "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n" <<
-    "<head>\n" <<
-    "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n" <<
-    "<title>Top 20+ MySQL Best Practices - Nettuts+</title>\n" <<
-    "<!-- ... rest of the html ... -->\n";*/
-/*
-  char cur[BUF_SIZE];
-  string ssresponse;
-  cout << "Receiving response..." << endl;
-  while(recv(sd,cur,BUF_SIZE,0)>0)
-  {
-    ssresponse.append(cur);
-    printf("%s\n",cur);
-    bzero(&cur,sizeof(cur));
-  }
-*/
-
-
+  //read and parse server response
   char cur[BUF_SIZE+1];
+  bzero(&cur,sizeof(cur));
+
   stringstream ssresponse;
   stringstream docstream;
-  cur[BUF_SIZE] = '\0';
+
   bool readingHeader = true;
+
   size_t readed = read(sd, &cur, BUF_SIZE);
-/*  string temp = testresponse.str();
-  size_t readed = temp.length();
-  cout << "readed:\n" << readed << "\n";
-  testresponse.read(cur, BUF_SIZE);
-  printf("cur:\n%s\n", cur);*/
   while (readed > 0)
   {
     if (readingHeader)
     {
-      if (readed < BUF_SIZE) {
-        printf("readed < BUF_SIZE\n");
-        cur[readed] = '\0';
-      }
       char* headerEnd = strstr(cur, "\r\n\r\n");
       printf("headerEnd:\n%s\n", headerEnd);
       if (headerEnd != NULL)
@@ -213,9 +175,14 @@ int main(int argc, char** argv)
       docstream.write(cur, readed);
       printf("Writing to docstream.\n");
     }
+
+    bzero(&cur,sizeof(cur));
+
     printf("Reading next segment.\n");
     readed = read(sd, &cur, BUF_SIZE); 
   }
+
+  //When file is returned by server, output file to screen and file system
 
   printf("Printing ssresponse:\n");
   cout << ssresponse.str();
@@ -223,11 +190,8 @@ int main(int argc, char** argv)
   cout << docstream.str();
   printf("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   
-//
-//
-//
-
 	//If server returns error code instead of OK code, do not save file; display on the screen whatever error page was sent with error
+
   int httpCode = atoi(ssresponse.str().substr(9,3).c_str());
   cout << "HTTP code " << httpCode << endl << endl;
   if(httpCode == 200)
@@ -242,19 +206,13 @@ int main(int argc, char** argv)
     {
       filetype = address.substr(lastdot);
     }
-    
-    
+
     ofstream savefile(("file" + filetype).c_str());
     savefile << docstream.str();
     savefile.close();
   }
-//
-//
-//
+
 	//exit after receiving response
-//
-//
-//
 
   return 0;
 }

@@ -39,42 +39,8 @@ struct threadData
     return -1; \
   }
 
-// ConvertParameterToInt
-//
-// several of our parameters are expected to be well formed numbers
-// since no negative values are expected, return -1 to indicate an error.
-//
-int ConvertParameterToInt(char* value)
-{
-  char* endptr = NULL;
-  long int result = strtol(value, &endptr, 0);
-  if (*value == '\0' || *endptr != '\0')
-    return -1;
-
-  return (int)result;
-}
-
 void* openAndSendFile(void* whatever)
 {
-  
-
-  //  If file requested does not exist, return 404 Not Found code with custom File Not Found page
-  //
-  //
-  //
-  //  If HTTP request is for SecretFile.html, return 401 Unauthorized
-  //
-  //
-  //
-  //  If request is for file that is above the directory structure where web server is running ( for example, "GET ../../../etc/passwd" ), return 403 Forbidden
-  //
-  //
-  //
-  //  if server cannot understand request return 400 Bad Request
-  //
-  //
-  //
-
   printf("Begin thread:\n");
   threadData* data = (threadData*)whatever;
   int sd = data->sd;
@@ -108,25 +74,34 @@ void* openAndSendFile(void* whatever)
   // open file requested...
   int httpcode;
   string filerequest = ssrequest.str();
-  filerequest = filerequest.erase(0, 4);
+  filerequest = filerequest.erase(0, 5);
   filerequest = filerequest.substr(0, filerequest.find(" "));
-  if (filerequest == "/")
+  if (filerequest == "")
   {
-    filerequest == "/mainfile.html";
+    filerequest == "mainfile.html";
   }
+
   ifstream file(filerequest.c_str());
-  if(filerequest == "/SecretFile.html")
+
+  // as noted in class, for your demo script, you can create a list of "unauthorized files"
+  // and "forbidden files" and check that list rather than actually trying to determine if 
+  // you don't have the permissions  
+  if(filerequest == "SecretFile.html")
   {
+    //  If HTTP request is for SecretFile.html, return 401 Unauthorized
     httpcode = 401;
     file.close();
   }
   else if(strstr(filerequest.c_str(), "..")!=NULL)
   {
+    // If request is for file that is above the directory structure where web server
+    // is running ( for example, "GET ../../../etc/passwd" ), return 403 Forbidden
     httpcode = 403;
     file.close();
   }
   else if(!file.good())
   {
+    //  If file requested does not exist, return 404 Not Found code with custom File Not Found page
     httpcode = 404;
     file.close();
   }
@@ -155,10 +130,12 @@ void* openAndSendFile(void* whatever)
 
   if(httpcode == 200)
   {
-    ssresponse << file;
+    ssresponse << file.rdbuf();
+    file.close();
   }
   else
   {
+    // custom error page
     ssresponse << "<p>" << httpcode << "</p>";
   }
 
@@ -180,11 +157,6 @@ void* openAndSendFile(void* whatever)
 
 int main(int argc, char** argv)
 {
-  //wait for connection and HTTP GET request (you may do this single threaded or multi-threaded)
-  
-
-
-
   // Declare and initialize sockaddr_in structure
   sockaddr_in acceptSockAddr;
   bzero((char*)&acceptSockAddr, sizeof(acceptSockAddr));
